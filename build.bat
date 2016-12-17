@@ -1,3 +1,3 @@
-docker run -v /work/prototypes/src:/src mono xbuild /src/HelloWorld/HelloWorld.sln
+docker run -v /work/prototypes/src:/src mono xbuild /src/Issuing.sln
 
-docker build -t adunicorn/helloworld .
+docker build -t adunicorn/issuing .

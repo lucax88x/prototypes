@@ -1,2 +1,2 @@
-docker kill helloworld
-docker rm helloworld
+docker kill issuing
+docker rm issuing
