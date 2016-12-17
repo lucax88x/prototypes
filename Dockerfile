@@ -1,4 +1,4 @@
 FROM mono
-COPY src/HelloWorld/HelloWorld/bin/Debug /program
+COPY src/HelloWorld/IssuingService/bin/Debug /program
 WORKDIR /program
-CMD mono HelloWorld.exe
+ENTRYPOINT ["mono", "IssuingService.exe"]
