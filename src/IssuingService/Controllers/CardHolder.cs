@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Net;
+using System.Text;
 using System.Web.Http;
 using IssuingService.Models;
+using Newtonsoft.Json;
+using RabbitMQ.Client;
 using ServiceStack.Redis;
 
 namespace IssuingService.Controllers
@@ -41,6 +44,26 @@ namespace IssuingService.Controllers
                 throw  new HttpResponseException(HttpStatusCode.NotFound);
 
             return cardHolder;
+        }
+
+        [Route("api/cardholder/{id}")]
+        [HttpPost]
+        public void Add(CardHolder cardHolder)
+        {
+            var factory = new ConnectionFactory() { HostName = "rabbit" };
+
+            using (var connection = factory.CreateConnection())
+            using (var channel = connection.CreateModel())
+            {
+                channel.ExchangeDeclare(exchange: "CardHolder", type: "topic");
+
+                var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(cardHolder));
+
+                channel.BasicPublish(exchange: "CardHolder",
+                                     routingKey: "Add",
+                                     basicProperties: null,
+                                     body: body);
+            }
         }
     }
 }
