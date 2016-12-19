@@ -1,6 +1,10 @@
 # prototypes
 Disposable prototypes for our experiments
 
+## Setup
+* Install Docker;
+* Setup a `/work` shared folded on VirtualBox VM poiting to the directory containing this project
+
 
 ## Build
 
