@@ -1,4 +1,1 @@
-cd IssuingService
-build.bat
-cd ..
-
+./IssuingService/build.bat
