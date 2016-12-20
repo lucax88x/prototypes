@@ -1,0 +1,2 @@
+cd RabbitConsumer
+build.bat

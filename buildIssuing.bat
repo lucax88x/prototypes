@@ -1,0 +1,2 @@
+cd IssuingService
+build.bat
