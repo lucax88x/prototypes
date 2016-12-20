@@ -46,7 +46,7 @@ namespace IssuingService.Controllers
             return cardHolder;
         }
 
-        [Route("api/cardholder/{id}")]
+        [Route("api/cardholder")]
         [HttpPost]
         public void Add(CardHolder cardHolder)
         {
@@ -55,7 +55,7 @@ namespace IssuingService.Controllers
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
-                channel.ExchangeDeclare(exchange: "CardHolder", type: "topic");
+                channel.ExchangeDeclare(exchange: "CardHolder", type: "topic", durable: true);
 
                 var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(cardHolder));
 

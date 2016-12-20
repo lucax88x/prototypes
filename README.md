@@ -34,7 +34,7 @@ Use the API, visiting:
 
 `[GET] /api/cardholders/counter` to count the persisted card holders
 
-`[PUT] api/cardholder/{id}` to create a card holder
+`[POST] api/cardholder` to create a card holder
 `[GET] api/cardholder/{id}` to read a card holder
 
 
