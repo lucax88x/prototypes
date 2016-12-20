@@ -10,6 +10,9 @@ namespace RabbitConsumer
 {
     class Program
     {
+        private static readonly string RabbitMQHostName = "rabbit";
+        private static readonly string RedisHostName = "redis";
+
         static void Main(string[] args)
         {
             for (var i = 0; i < 10; i++)
@@ -19,13 +22,16 @@ namespace RabbitConsumer
                 }
                 catch
                 {
-                    Thread.Sleep(5000);
+                    var sleep = 1000;
+                    Console.WriteLine(string.Format("Connection to RabbitMQ failed. Retrying in {0} seconds", sleep/1000));
+                    Thread.Sleep(sleep);
                 }
         }
 
         private static void RegisterConsumer()
         {
-            var factory = new ConnectionFactory() { HostName = "rabbit" };
+            
+            var factory = new ConnectionFactory() { HostName = RabbitMQHostName };
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
@@ -47,7 +53,7 @@ namespace RabbitConsumer
                         Console.WriteLine(" [x] {0}", message);
 
                         var cardHolder = JsonConvert.DeserializeObject<CardHolder>(message);
-                        var redis = new RedisClient("redis", 6379);
+                        var redis = new RedisClient(RedisHostName, 6379);
                         redis.SetValue("cardholder_" + cardHolder.ID, message);
                         Console.WriteLine("Stored in Redis: " + ("cardholder_" + cardHolder.ID));
 
