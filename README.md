@@ -8,25 +8,30 @@ Disposable prototypes for our experiments
 
 ## Build
 
-On Windows run:
+Run
 
 `build.bat`
 
-On OS X and Linux run:
-
-`./build.sh`
-
+in `IssuingService` and `RabbitConsumer`.
 
 ## Run
 
-On Windows run:
+Run
 
 `run.bat`
 
-On OS X and Linux run:
+## Teardown
 
-`./run.sh`
+`rmall`: stop and remove all services
+`killall`: kill remove all container
 
+### Operations
+
+`docker service ls`: list the running services;
+`docker service ps web`: list the running containers inside the service `web`
+`docker ps`: list running containers
+`docker ps -a`: list all container
+`docker service scale web=42`: scale (up or down) the service `web` to `42` replicas (containers)
 
 ## Usage
 
