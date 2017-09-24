@@ -11,6 +11,22 @@ namespace IssuingService.Controllers
 {
     public class CardHolderController : ApiController
     {
+        [Route("hello")]
+        [HttpGet]
+        public string Hello()
+        {
+            Console.WriteLine("Serving /hello");
+            return "Hello, world!";
+        }
+
+        [Route("")]
+        [HttpGet]
+        public string HelloRoot()
+        {
+            Console.WriteLine("Serving /hello");
+            return "Hello, world!";
+        }
+
         [Route("api/cardholders/counter")]
         [HttpGet]
         public long GetCouter()

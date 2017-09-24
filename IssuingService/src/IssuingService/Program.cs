@@ -8,9 +8,10 @@ namespace IssuingService
     {
         static void Main(string[] args)
         {
-            string baseAddress = "http://*:9000/";
+            string baseAddress = "http://*:5000/";
 
             using (WebApp.Start<Startup>(url: baseAddress))
+
             {
                 Console.WriteLine("App started with address '{0}' on a machine '{1}' with OS '{2}'", baseAddress, Environment.MachineName, Environment.OSVersion);
                 Console.WriteLine();
