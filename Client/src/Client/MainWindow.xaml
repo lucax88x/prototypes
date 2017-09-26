@@ -1,0 +1,96 @@
+﻿<controls:MetroWindow x:Class="Client.MainWindow"
+                      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+                      xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                      Icon="./adunicorn.ico"
+                      WindowStyle="None"
+                      WindowStartupLocation="CenterScreen"
+                      WindowState="Maximized"
+                      Title="Adunicorn"
+                      Height="600"
+                      Width="800">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </Window.Resources>
+    <controls:MetroWindow.RightWindowCommands>
+        <controls:WindowCommands ShowLastSeparator="False">
+            <Button Click="Settings_Click"
+                    ToolTip="Settings">
+                <iconPacks:PackIconFontAwesome Kind="Cog" />
+            </Button>
+        </controls:WindowCommands>
+    </controls:MetroWindow.RightWindowCommands>
+
+    <controls:MetroWindow.Flyouts>
+        <controls:FlyoutsControl x:Name="flyoutsControl">
+            <controls:Flyout x:Name="settingsFlyout"
+                             Margin="50 0 0 0"
+                             Header="Settings"
+                             Width="200"
+                             Position="Right">
+                <Grid>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Label Grid.Row="0" Grid.Column="0">Tiles</Label>
+                    <Slider Maximum="100" Grid.Row="0" Grid.Column="1" Value="{Binding Settings.Tiles, Delay=500}" />
+                    <Label Grid.Row="1" Grid.Column="0">Delay</Label>
+                    <Slider Minimum="500" Maximum="20000" Grid.Row="1" Grid.Column="1"
+                            Value="{Binding Settings.Delay, Delay=500}" />
+
+                </Grid>
+            </controls:Flyout>
+        </controls:FlyoutsControl>
+    </controls:MetroWindow.Flyouts>
+    <Grid>
+
+        <ListView
+            BorderThickness="0"
+            SelectedIndex="0"
+            ItemsSource="{Binding Tiles}">
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel
+                        Width="{Binding (FrameworkElement.ActualWidth), RelativeSource={RelativeSource AncestorType=ScrollContentPresenter}}" />
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <controls:Tile
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Width="100"
+                            Height="100"
+                            Background="Transparent">
+                            <iconPacks:PackIconFontAwesome Kind="Hourglass" Spin="True" SpinDuration="0.5" />
+                        </controls:Tile>
+                        <controls:Tile
+                            Title="{Binding Card.Pan}"
+                            Visibility="{Binding IsSuccess, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Width="100"
+                            Height="100"
+                            Background="DarkGreen"
+                            BorderBrush="DarkGreen"
+                            Count="{Binding Card.Version}" />
+                        <controls:Tile
+                            Title="Error"
+                            Visibility="{Binding IsFailed, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Width="100"
+                            Height="100"
+                            Background="DarkRed"
+                            BorderBrush="DarkRed" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+
+</controls:MetroWindow>

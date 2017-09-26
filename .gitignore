@@ -2,3 +2,6 @@
 **/src/**/obj
 *.suo
 packages
+.idea
+.vs
+_Resharper.Caches
