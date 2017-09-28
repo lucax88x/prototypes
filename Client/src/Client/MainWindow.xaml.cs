@@ -21,10 +21,5 @@ namespace Client
 
             DataContext = ViewModel;
         }
-
-        private void Settings_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            settingsFlyout.IsOpen = true;
-        }
     }
 }
