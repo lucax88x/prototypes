@@ -2,13 +2,19 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
+using System.Windows.Media;
+using System.Windows.Threading;
 using Client.Models;
+using LiveCharts;
+using LiveCharts.Configurations;
+using LiveCharts.Wpf;
 using RestSharp;
 
 namespace Client.ViewModels
 {
-    public class CardHolder: INotifyPropertyChanged
+    public class CardHolder : INotifyPropertyChanged
     {
         private string _firstname;
         private string _lastname;
@@ -24,7 +30,7 @@ namespace Client.ViewModels
                 OnPropertyChanged("Name");
             }
         }
-        
+
         public string Lastname
         {
             get => _lastname;
@@ -35,7 +41,7 @@ namespace Client.ViewModels
                 OnPropertyChanged("Name");
             }
         }
-        
+
         public string Version
         {
             get => _version;
@@ -47,13 +53,13 @@ namespace Client.ViewModels
         }
 
         public string Name => $"{Firstname} {Lastname}";
-        
+
         public event PropertyChangedEventHandler PropertyChanged;
+
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
     }
 
     public enum TileStatus
@@ -130,7 +136,7 @@ namespace Client.ViewModels
 
             _bw.DoWork += (evt, args) =>
             {
-                _viewModel.Statistics.Count++;
+                _viewModel.Statistics.AddCount();
 
                 try
                 {
@@ -138,7 +144,7 @@ namespace Client.ViewModels
 
                     var client = new RestClient("http://issuing-emaissuing.a3c1.starter-us-west-1.openshiftapps.com");
 
-                    var request = new RestRequest("api/cardholder/1", Method.GET);
+                    var request = new RestRequest("api/cardholder/1", Method.GET) {Timeout = 2000};
 
                     var response = client.Execute<CardHolderModel>(request);
 
@@ -147,18 +153,18 @@ namespace Client.ViewModels
                         Status = TileStatus.Success;
                         CardHolder.Firstname = response.Data.Firstname;
                         CardHolder.Lastname = response.Data.Lastname;
-                        _viewModel.Statistics.Successes++;
+                        _viewModel.Statistics.AddSuccesses();
                     }
                     else
                     {
                         Status = TileStatus.Failed;
-                        _viewModel.Statistics.Errors++;
+                        _viewModel.Statistics.AddErrors();
                     }
                 }
                 catch (Exception ex)
                 {
                     Status = TileStatus.Failed;
-                    _viewModel.Statistics.Errors++;
+                    _viewModel.Statistics.AddErrors();
                 }
 
                 DelayLoad();
@@ -168,6 +174,7 @@ namespace Client.ViewModels
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -182,7 +189,7 @@ namespace Client.ViewModels
 
     public class Settings : INotifyPropertyChanged
     {
-        public int _tiles = 2;
+        public int _tiles = 15;
         public int _delay = 5000;
 
         public int Tiles
@@ -212,50 +219,172 @@ namespace Client.ViewModels
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 
+    public class MeasureModel
+    {
+        public DateTime DateTime { get; set; }
+        public double Value { get; set; }
+    }
+    
     public class Statistics : INotifyPropertyChanged
     {
-        private int _errors;
-        private int _successes;
-        private int _count;
+        private double _axisMax;
+        private double _axisMin;
+        
+        private int _count = 0;
+        private int _errors = 0;
+        private int _successes = 0;
+        private int _processedCount = 0;
+        private int _processedSuccesses = 0;
+        private int _processedErrors  = 0;
 
-        public int Errors
+        public Statistics()
         {
-            get => _errors;
+            var mapper = Mappers.Xy<MeasureModel>()
+                .X(model => model.DateTime.Ticks) 
+                .Y(model => model.Value);
+ 
+            Charting.For<MeasureModel>(mapper);
+ 
+            CountValues = new ChartValues<MeasureModel>();
+            SuccessesValues = new ChartValues<MeasureModel>();
+            ErrorsValues = new ChartValues<MeasureModel>();
+ 
+            DateTimeFormatter = value => new DateTime((long) value).ToString("mm:ss");
+ 
+            AxisStep = TimeSpan.FromSeconds(1).Ticks;
+            AxisUnit = TimeSpan.TicksPerSecond;
+ 
+            SetAxisLimits(DateTime.Now);
+ 
+            Timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(1000)
+            };
+            Timer.Tick += TimerOnTick;
+            Timer.Start();
+        }
+        
+        public ChartValues<MeasureModel> CountValues { get; set; }
+        public ChartValues<MeasureModel> SuccessesValues { get; set; }
+        public ChartValues<MeasureModel> ErrorsValues { get; set; }
+        public Func<double, string> DateTimeFormatter { get; set; }
+        public double AxisStep { get; set; }
+        public double AxisUnit { get; set; }
+        public DispatcherTimer Timer { get; set; }
+ 
+        public double AxisMax
+        {
+            get => _axisMax;
             set
             {
-                _errors = value;
+                _axisMax = value;
                 OnPropertyChanged();
             }
         }
-        public int Successes
+        public double AxisMin
         {
-            get => _successes;
+            get => _axisMin;
             set
             {
-                _successes = value;
+                _axisMin = value;
                 OnPropertyChanged();
             }
         }
+        
         public int Count
         {
-            get => _count;
-            set
-            {
-                _count = value;
-                OnPropertyChanged();
-            }
+            get => _count;            
         }
+        
+        public int Errors
+        {
+            get => _errors;            
+        }
+        
+        public int Successes
+        {
+            get => _successes;            
+        }
+ 
+        private void TimerOnTick(object sender, object eventArgs)
+        {
+            var now = DateTime.Now;
+
+            var toProcessCount = _count - _processedCount;
+            var toProcessSuccesses = _successes - _processedSuccesses;
+            var toProcessErrors = _errors - _processedErrors;
+
+            if (toProcessCount > 0)
+            {
+                CountValues.Add(new MeasureModel
+                {
+                    DateTime = now,
+                    Value = toProcessCount
+                });
+
+                _processedCount = _count;
+                if (CountValues.Count > 30) CountValues.RemoveAt(0);
+            }
+            
+            if (toProcessSuccesses > 0)
+            {
+                SuccessesValues.Add(new MeasureModel
+                {
+                    DateTime = now,
+                    Value = toProcessSuccesses
+                });
+
+                _processedSuccesses = _successes;
+                if (SuccessesValues.Count > 30) SuccessesValues.RemoveAt(0);
+            }
+            
+            
+            if (toProcessErrors > 0)
+            {
+                ErrorsValues.Add(new MeasureModel
+                {
+                    DateTime = now,
+                    Value = toProcessErrors
+                });
+
+                _processedErrors = _errors;
+                if (ErrorsValues.Count > 30) ErrorsValues.RemoveAt(0);
+            }
+
+            SetAxisLimits(now);
+        }
+ 
+        private void SetAxisLimits(DateTime now)
+        {
+            AxisMax = now.Ticks + TimeSpan.FromSeconds(1).Ticks; // lets force the axis to be 1 second ahead
+            AxisMin = now.Ticks - TimeSpan.FromSeconds(8).Ticks; // and 8 seconds behind
+        } 
 
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void AddCount()
+        {
+            Interlocked.Add(ref _count, 1);
+        }
+        
+        public void AddSuccesses()
+        {
+            Interlocked.Add(ref _successes, 1);
+        } 
+        
+        public void AddErrors()
+        {
+            Interlocked.Add(ref _errors, 1);
         }
     }
 
@@ -267,8 +396,9 @@ namespace Client.ViewModels
 
         public MainWindowViewModel()
         {
-            Settings = new Settings(this);
             Statistics = new Statistics();
+
+            Settings = new Settings(this);
         }
 
         public void Update(int count)
